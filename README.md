@@ -5,7 +5,7 @@ Standalone Realman robot plugin for LeRobot.
 ## Install
 
 ```bash
-pip install -e /media/medrob/SSD2t/hzh_workspace/lerobot-robot-realman
+pip install -e ../lerobot-robot-realman
 ```
 
 ## Example
