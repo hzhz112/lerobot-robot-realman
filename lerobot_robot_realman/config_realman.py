@@ -16,8 +16,8 @@ class RealmanConfig(RobotConfig):
 
     control_mode: str = "delta_eef"
     use_dummy_action: bool = False
-    delta_eef_position_scale: tuple[float, float, float] = (4.0, 4.0, 4.0)
-    delta_eef_rotation_scale: tuple[float, float, float] = (1.5, 1.5, 1.5)
+    delta_eef_position_scale: tuple[float, float, float] = (5.0, 5.0, 4.0)
+    delta_eef_rotation_scale: tuple[float, float, float] = (1.0, 1.0, 1.0)
     delta_eef_position_axis_order: tuple[int, int, int] = (0, 1, 2)
     delta_eef_position_axis_sign: tuple[float, float, float] = (1.0, 1.0, 1.0)
     delta_eef_rotation_axis_order: tuple[int, int, int] = (1, 0, 2)
