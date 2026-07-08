@@ -30,15 +30,31 @@ class RealmanRobot(Robot):
         self._last_pose = None
         self._teleop_initial_pose = None
 
+    def _joint_state_keys(self) -> list[str]:
+        keys = [f"joint_{i + 1}" for i in range(self.config.dof)]
+        if self.config.use_gripper:
+            keys.append("gripper")
+        return keys
+
+    def _eef_pose_keys(self) -> list[str]:
+        return ["eef_x", "eef_y", "eef_z", "eef_rx", "eef_ry", "eef_rz"]
+
+    def _action_keys(self) -> list[str]:
+        if self.config.control_mode == "joint":
+            return self._joint_state_keys()
+
+        keys = ["x", "y", "z", "rx", "ry", "rz"]
+        if self.config.use_dummy_action and self.config.use_gripper:
+            keys.append("dummy")
+        if self.config.use_gripper:
+            keys.append("gripper")
+        return keys
+
     @property
     def observation_features(self) -> dict:
-        state_dim = self.config.dof + (1 if self.config.use_gripper else 0)
-        features = {
-            "observation.state": (state_dim,),
-            "observation.eef_pose": (6,),
-        }
+        features = {key: float for key in [*self._joint_state_keys(), *self._eef_pose_keys()]}
         for cam_name, cam_cfg in self.config.cameras.items():
-            features[f"observation.images.{cam_name}"] = (
+            features[cam_name] = (
                 cam_cfg.height,
                 cam_cfg.width,
                 3,
@@ -47,16 +63,7 @@ class RealmanRobot(Robot):
 
     @property
     def action_features(self) -> dict:
-        if self.config.control_mode == "joint":
-            dim = self.config.dof + (1 if self.config.use_gripper else 0)
-            return {"action": (dim,)}
-        if self.config.control_mode in ("eef_pose", "eef_velocity", "delta_eef"):
-            if self.config.use_dummy_action and self.config.use_gripper:
-                return {"action": (8,)}
-            if self.config.use_gripper:
-                return {"action": (7,)}
-            return {"action": (6,)}
-        raise ValueError(f"Unknown control_mode: {self.config.control_mode}")
+        return {key: float for key in self._action_keys()}
 
     @property
     def is_connected(self) -> bool:
@@ -207,8 +214,8 @@ class RealmanRobot(Robot):
             state = joint6
 
         obs: dict[str, Any] = {
-            "observation.state": state.astype(np.float32),
-            "observation.eef_pose": pose6.astype(np.float32),
+            **{key: float(value) for key, value in zip(self._joint_state_keys(), state.tolist(), strict=True)},
+            **{key: float(value) for key, value in zip(self._eef_pose_keys(), pose6.tolist(), strict=True)},
         }
 
         if not self.config.enable_camera_observation:
@@ -219,7 +226,7 @@ class RealmanRobot(Robot):
                 image = cam.async_read()
             except Exception:
                 image = cam.read()
-            obs[f"observation.images.{cam_name}"] = image
+            obs[cam_name] = image
 
         return obs
 
@@ -228,7 +235,10 @@ class RealmanRobot(Robot):
             raise ConnectionError("RealmanRobot is not connected.")
 
         if isinstance(action, dict):
-            target = np.asarray(action["action"], dtype=np.float32).reshape(-1)
+            if "action" in action:
+                target = np.asarray(action["action"], dtype=np.float32).reshape(-1)
+            else:
+                target = np.asarray([action[key] for key in self._action_keys()], dtype=np.float32).reshape(-1)
         else:
             target = np.asarray(action, dtype=np.float32).reshape(-1)
 
@@ -243,7 +253,7 @@ class RealmanRobot(Robot):
         else:
             raise ValueError(f"Unknown control_mode: {self.config.control_mode}")
 
-        return {"action": sent}
+        return {key: float(value) for key, value in zip(self._action_keys(), sent.tolist(), strict=True)}
 
     def _send_joint_action(self, target: np.ndarray) -> np.ndarray:
         expected_min = self.config.dof

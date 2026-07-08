@@ -17,7 +17,7 @@ class RealmanConfig(RobotConfig):
     control_mode: str = "delta_eef"
     use_dummy_action: bool = False
     delta_eef_position_scale: tuple[float, float, float] = (5.0, 5.0, 4.0)
-    delta_eef_rotation_scale: tuple[float, float, float] = (1.0, 1.0, 1.0)
+    delta_eef_rotation_scale: tuple[float, float, float] = (1.5, 1.5, 1.5)
     delta_eef_position_axis_order: tuple[int, int, int] = (0, 1, 2)
     delta_eef_position_axis_sign: tuple[float, float, float] = (1.0, 1.0, 1.0)
     delta_eef_rotation_axis_order: tuple[int, int, int] = (1, 0, 2)
@@ -37,10 +37,10 @@ class RealmanConfig(RobotConfig):
     teleop_angular_velocity_gain: float = 2.0
     max_cartesian_velocity_mps: float = 0.25
     max_angular_velocity_rps: float = 0.8
-    enable_camera_observation: bool = False
+    enable_camera_observation: bool = True
     verbose_motion_logs: bool = False
 
-    reset_on_disconnect: bool = False
+    reset_on_disconnect: bool = True  #退出时 复位 
     initial_joint6: tuple[float, float, float, float, float, float] = (
         0.0, 0.0, 90.0, 0.0, 90.0, 0.0
     )
